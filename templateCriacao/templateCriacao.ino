@@ -3,9 +3,13 @@
 
 //Inclusão das outras Bibliotecas necessárias
 
-#define ITERACOES 10000
+#define ITERACOES 30
+#define TAM_PILHA 200
+#define PRIORIDADE_TP 3
 
 //Definição das outras Macros desejáveis
+
+void vTarefaPrincipal(void *);
 
 void setup(){
   
@@ -15,43 +19,67 @@ void setup(){
   if (F_CPU == 1000000L) clock_prescale_set(clock_div_16);
   
   Serial.begin(9600);  
-  
-  uint32_t inicio = 0, fim = 0, soma = 0, i = ITERACOES;
-  float mediaTempoLoop = 0.0, mediaLoopCriacao = 0.0, tempoMedioCriacao = 0.0;
 
-  //O trecho de código abaixo serve para verificar o tempo de execução de um laço vazio com i iterações, definidas pela macro ITERACOES,
-  //com o objetivo de verificar o tempo que o sistema leva para fazer a decrementação da variável, a comparação e o retorno para o inicio
-  //do escopo do laço
-  inicio = micros();  //Salva o tempo antes da execução do laço
+  xTaskCreate(vTarefaPrincipal, NULL, TAM_PILHA, NULL, PRIORIDADE_TP, NULL);  //Cria a tarefa principal
+  vTaskStartScheduler(); //Inicia o escalonador
+  for( ;; ); //Se o escalonador foi devidamente inciado, este laço não deverá ser executado
+}
+
+void vTarefaPrincipal(void *){
+  unsigned int inicio = 0, fim = 0, i = ITERACOES;  
+  float mediaTempoFuncaoMicros = 0.0, mediaTempoCriacao = 0.0, mediaTempoExclusao = 0.0;
+
+  //O trecho de código abaixo serve para verificar o tempo de execução entre as chamadas da função micros(), que retorna o tempo atual do
+  //microcontrolador. Esse laço vai ser executada i vezes, onde i será definido pela macro ITERACOES. Como há tambem um atraso entre as
+  //medições de tempo, esse tempo deve ser diminuido do tempo lido na criação e exclusão dos recursos, para que eles se tornem mais precisos.
   do{
+    inicio = micros();  //Salva o primeiro retorno de tempo
+    fim = micros();     //Salva o segundo retorno de tempo
+    mediaTempoFuncaoMicros += (float)(fim - inicio);  //Faz a soma das diferenças de tempo entre a execução das duas linhas acima, de todas
+                                                      //as iterações
   }while(i--);
-  fim = micros();     //Salva o tempo depois da execução do laço
-  mediaTempoLoop = (float)(fim - inicio) / (float)ITERACOES;  //Calcula o tempo médio para executar o laço, onde:
-                                                              //Pega-se o tempo final e diminui dele o tempo inicial, restando o 
-                                                              //tempo em microssegundos que levou-se para executar o laço, após
-                                                              //divide-se pelo total de iterações do laço, resultando no tempo médio
-                                                              //para executar uma única iteração do laço
+  mediaTempoFuncaoMicros /= (float)ITERACOES; //Calcula o tempo médio entre as chamadas de função micro, onde pega-se a soma das diferenças
+                                              //de tempo e divide-se pelo total de iterações
   
   i = ITERACOES;
 
   //Criação de outras variáveis necessárias para a execução da criação e exclusão do recurso
   
-  inicio = micros();  //Salva o tempo antes da execução do laço
   do{
-    //Espaço para executar as funções de criação e exclusão do recurso
+    inicio = micros();  //Salva o tempo antes da execução da função de criação do recurso
+    //Espaço para executar a função de criação do recurso
+    fim = micros();     //Salva o tempo depois da execução da função de criação do recurso
+    if(1){               //Condição para verificar se o recurso foi criado
+      mediaTempoCriacao += (float)(fim - inicio);   //Faz a soma das diferenças de tempo entre o tempo captado antes e depois da execução da
+                                                    //função de criação, em todas as iterações, desde que o recurso tenha sido devidamente
+                                                    //criado
+      inicio = micros();  //Salva o tempo antes da execução da função de exclusão do recurso
+      //Espaço para executar as função de exclusão do recurso
+      fim = micros();     //Salva o tempo depois da execução da função de exclusão do recurso
+      mediaTempoExclusao += (float)(fim - inicio);  //Faz a soma das diferenças de tempo entre o tempo captado antes e depois da execução da
+                                                    //função de exclusão, em todas as iterações, desde que o recurso tenha sido devidamente
+                                                    //criado
+    }else //Caso o recurso não tenha sido devidamente criado, incrementa-se 1 (um) na variável i, para que o laço possa executar novamente
+          //essa iteração
+      i++;
   }while(i--);
-  fim = micros();     //Salva o tempo depois da execução do laço
   
-  tempoLoopCriacao = ((float)(fim - inicio) / (float)ITERACOES);  //Calcula o tempo médio para executar o laço de criação e exclusão do recurso, onde:
-                                                                  //Pega-se o tempo final e diminui dele o tempo inicial, restando o 
-                                                                  //tempo em microssegundos que levou-se para executar o laço, após
-                                                                  //divide-se pelo total de iterações do laço, resultando no tempo médio
-                                                                  //para executar uma única iteração do laço
+  mediaTempoCriacao /= (float)ITERACOES;  //Calcula o tempo médio entre as chamadas de função micro presente antes e depois da chamada da
+                                          //função de criação do recurso, para isso, pega a soma de todos as iterações e divide-se pelo total
+                                          //de iterações
 
-  tempoMedioCriacao = tempoLoopCriacao - mediaTempoLoop;    //O tempo médio final é calculado fazendo o tempo de cada iteração do laço de criação e
-                                                            //diminuindo desse tempo o tempo médio para executar uma iteração do laço
+  mediaTempoExclusao /= (float)ITERACOES; //Semelhante à operação acima, porém para calcular o tempo médio entre as chamadas de função micro
+                                          //presente antes e depois da chamada da função de exclusão do recurso,
+
+  mediaTempoCriacao -= mediaTempoFuncaoMicros;  //Para calcular o tempo médio final para criação dos recursos, basta pegar o tempo médio já 
+                                                //calculado e descontar o o tempo médio entre as chamadas da função micros(), calculado 
+                                                //anteriormente e armazenado na variável mediaTempoFuncaoMicros
+
+  mediaTempoExclusao -= mediaTempoFuncaoMicros; //Semelhante à operação acima, porém para calcular o tempo médio final para exclusão dos
+                                                //recursos
   
-  Serial.println(tempoMedioCriacao);
+  Serial.println(mediaTempoCriacao);
+  vTaskDelete(NULL);  //A tarefa principal se auto exclui após atingir seu objetivo
 }
 
 void loop(){
