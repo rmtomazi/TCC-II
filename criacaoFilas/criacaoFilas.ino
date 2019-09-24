@@ -5,10 +5,10 @@
 #include <queue.h>
 
 #define ITERACOES 30
-#define TAM_PILHA 200
+#define TAM_PILHA 1000
 #define PRIORIDADE_TP 3
 
-//Definição das outras Macros desejávei
+//Definição das outras Macros desejáveis
 #define TAM_FILA 1
 #define TAM_ITEM 1
 
@@ -45,7 +45,7 @@ void vTarefaPrincipal(void *){
                                               //de tempo e divide-se pelo total de iterações
   
   i = ITERACOES;
-
+  
   //Criação de outras variáveis necessárias para a execução da criação e exclusão do recurso
   QueueHandle_t xQueue = NULL;
   do{
@@ -64,6 +64,7 @@ void vTarefaPrincipal(void *){
       mediaTempoExclusao += (float)(fim - inicio);  //Faz a soma das diferenças de tempo entre o tempo captado antes e depois da execução da
                                                     //função de exclusão, em todas as iterações, desde que o recurso tenha sido devidamente
                                                     //criado
+      xQueue = NULL;
     }else //Caso o recurso não tenha sido devidamente criado, incrementa-se 1 (um) na variável i, para que o laço possa executar novamente
           //essa iteração
       i++;
@@ -83,8 +84,8 @@ void vTarefaPrincipal(void *){
   mediaTempoExclusao -= mediaTempoFuncaoMicros; //Semelhante à operação acima, porém para calcular o tempo médio final para exclusão dos
                                                 //recursos
   
-  //Serial.println(mediaTempoFuncaoMicros);
   Serial.println(mediaTempoCriacao);
+  Serial.println(mediaTempoExclusao);
   vTaskDelete(NULL);  //A tarefa principal se auto exclui após atingir seu objetivo
 }
 
