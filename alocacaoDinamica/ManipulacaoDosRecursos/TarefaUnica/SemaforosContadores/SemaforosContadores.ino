@@ -5,15 +5,16 @@
 #include <semphr.h>
 
 #define ITERACOES 1000
-#define PILHA_TE 102
-#define PRIORIDADE_TE 2
+#define PILHA_TE 200
+#define PRIORIDADE_TE 3
 
 //Definição das outras Macros desejáveis
 
 void vTarefaEmissora(void *);
+void vTarefaReceptora(void *);
 
 //Declaração de variáveis globais necessárias
-SemaphoreHandle_t xMutex;
+SemaphoreHandle_t xSemaphCounting = NULL;
 
 void setup(){
   
@@ -25,7 +26,7 @@ void setup(){
   Serial.begin(9600);  
 
   //Espaço para criar os recursos
-  xMutex = xSemaphoreCreateMutex();
+  xSemaphCounting =  xSemaphoreCreateCounting(1, 1);
   
   xTaskCreate(vTarefaEmissora, NULL, PILHA_TE, NULL, PRIORIDADE_TE, NULL);  //Cria a tarefa emissora, que medirá o tempo de manipulação do recurso
   vTaskStartScheduler(); //Inicia o escalonador
@@ -49,11 +50,11 @@ void vTarefaEmissora(void *){
   do{
     //Espaço para executar as funções de manipulação do recurso
     inicio = micros();  //Salva o tempo antes da execução da função de aquisição do mutex
-    xSemaphoreTake(xMutex, portMAX_DELAY);
+    xSemaphoreTake(xSemaphCounting, portMAX_DELAY);
     fim = micros();     //Salva o tempo depois da execução da função de aquisição do mutex
     mediaTempoAquisicao += float(fim - inicio);
     inicio = micros();  //Salva o tempo antes da execução da função de entrega do mutex
-    xSemaphoreGive(xMutex);
+    xSemaphoreGive(xSemaphCounting);
     fim = micros();     //Salva o tempo depois da execução da função de entrega do mutex
     mediaTempoEntrega += float(fim - inicio);
   }while(i--);
