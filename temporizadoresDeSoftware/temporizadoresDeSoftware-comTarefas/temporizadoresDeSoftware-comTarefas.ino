@@ -5,7 +5,7 @@
 
 PILHA_TAREFA 100
 PRIORIDADE_TAREFA 3
-QUANTIDADE_TEREFAS 1
+QUANTIDADE_TEREFAS 2
 
 void vTarefa(void *);
 void FuncaoRetorno(TimerHandle_t xTimer);
