@@ -14,7 +14,7 @@ void setup(){
   
   Serial.begin(9600);
 
-  TimerHandle_t timer1 = xTimerCreate("", 500 / portTICK_PERIOD_MS, pdTRUE, 0, FuncaoRetorno);
+  TimerHandle_t timer1 = xTimerCreate("", 1000 / portTICK_PERIOD_MS, pdTRUE, 0, FuncaoRetorno);
   xTimerStart(timer1, 0);
   vTaskStartScheduler(); //Inicia o escalonador
   for( ;; ); //Se o escalonador foi devidamente inciado, este laço não deverá ser executado
@@ -23,6 +23,7 @@ void setup(){
 void FuncaoRetorno(TimerHandle_t xTimer){
   Serial.println(micros());
 }
+
 void loop() {
   // put your main code here, to run repeatedly:
 

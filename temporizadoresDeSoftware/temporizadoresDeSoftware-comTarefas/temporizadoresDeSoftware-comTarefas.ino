@@ -3,6 +3,11 @@
 
 #include <timers.h>
 
+PILHA_TAREFA 100
+PRIORIDADE_TAREFA 3
+QUANTIDADE_TEREFAS 1
+
+void vTarefa(void *);
 void FuncaoRetorno(TimerHandle_t xTimer);
 
 void setup(){
@@ -13,7 +18,9 @@ void setup(){
   if (F_CPU == 1000000L) clock_prescale_set(clock_div_16);
   
   Serial.begin(9600);
-
+  for(int i = 0; i < QUANTIDADE_TAREFAS; i++){
+    xTaskCreate(vTarefa, NULL, PILHA_TAREFA, NULL, PRIORIDADE_TAREFA, NULL);  //Cria a tarefa que irá disputar a CPU com a tarefa Daemon
+  }
   TimerHandle_t timer1 = xTimerCreate("", 500 / portTICK_PERIOD_MS, pdTRUE, 0, FuncaoRetorno);
   xTimerStart(timer1, 0);
   vTaskStartScheduler(); //Inicia o escalonador
@@ -23,6 +30,11 @@ void setup(){
 void FuncaoRetorno(TimerHandle_t xTimer){
   Serial.println(micros());
 }
+
+void vTarefa(void *){
+  for( ; ; );
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
 
